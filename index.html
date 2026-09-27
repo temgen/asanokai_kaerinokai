@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>あさのかい・かえりのかい</title>
+<style>
+:root{
+  --bg:#f4f6fa;--panel:#fff;--ink:#111827;--muted:#667085;--line:#d7deea;
+  --blue:#2563d9;--blue2:#1749a6;--green:#14734a;--red:#d92d20;--soft:#eef4ff;
+  --shadow:0 5px 18px rgba(25,45,85,.12)
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;background:var(--bg);color:var(--ink);font-family:"UD デジタル 教科書体 N-R","UD Digi Kyokasho N-R","Yu Gothic","Hiragino Kaku Gothic ProN",sans-serif}
+button{font:inherit;color:inherit} body{overscroll-behavior:none}
+[hidden]{display:none!important}
+.view{display:none;width:100%;height:100vh}.view.active{display:flex}
+
+/* 司会進行表 */
+.meetingView{flex-direction:column;padding:7px 10px 10px;gap:7px}
+.meetingSwitcher{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:0 0 auto}
+.meetingTab{min-height:46px;border:2px solid var(--line);border-radius:13px;background:#fff;font-size:23px;font-weight:900;cursor:pointer}
+.meetingTab.active{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 3px 0 var(--blue2)}
+.meetingSheet{flex:1;min-height:0;background:#fff;border:3px solid #111;display:flex;flex-direction:column;overflow:hidden}
+.meetingTitle{height:58px;flex:0 0 58px;display:flex;align-items:center;justify-content:center;border-bottom:3px solid #111;font-size:35px;font-weight:900;letter-spacing:.04em;background:#fff}
+.meetingRows{display:grid;flex:1;min-height:0}
+.meetingRows.morning{grid-template-rows:repeat(8,1fr)}
+.meetingRows.evening{grid-template-rows:repeat(6,1fr)}
+.meetingRow{display:grid;grid-template-columns:88px 150px 1fr;min-height:0;border:0;background:#fff;padding:0;cursor:pointer;text-align:left}
+.meetingRow:not(:last-child){border-bottom:3px solid #111}
+.meetingRow:active{background:#f3f7ff}
+.meetingNum,.meetingPic,.meetingLabel{min-height:0;display:flex;align-items:center;justify-content:center}
+.meetingNum{border-right:3px solid #111;font-size:54px;font-weight:900}
+.meetingPic{border-right:3px solid #111;padding:3px 7px;gap:2px}
+.meetingPic img{max-width:100%;max-height:100%;object-fit:contain}
+.meetingPic.double img{max-width:50%}
+.meetingLabel{font-size:31px;font-weight:900;text-align:center;padding:4px 14px;line-height:1.15}
+
+/* 共通オーバーレイ */
+.activity{position:fixed;inset:0;z-index:120;background:#fff;display:none;flex-direction:column;padding:14px}
+.activity.open{display:flex}
+.activityHead{display:flex;align-items:center;gap:12px;min-height:54px}
+.backBtn{border:0;border-radius:13px;background:#e8edf5;padding:10px 20px;font-size:20px;font-weight:900;cursor:pointer}
+.activityTitle{flex:1;text-align:center;font-size:26px;font-weight:900;padding-right:100px}
+.messageStage{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;font-size:46px;font-weight:900;line-height:1.45;padding:30px}
+.greetingButtons{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:24px}
+.greetBtn{border:3px solid #b8c4d6;border-radius:24px;background:#fff;font-size:44px;font-weight:900;box-shadow:0 4px 0 #98a7bb;cursor:pointer}
+.greetBtn:active{transform:translateY(3px);box-shadow:0 1px 0 #98a7bb;background:#f5f8ff}
+
+/* がんばったこと */
+.effortStage{flex:1;min-height:0;display:flex;flex-direction:column;gap:6px;overflow:hidden}
+.effortPrompt{text-align:center;font-size:23px;font-weight:900;line-height:1.1;flex:0 0 auto}
+.subjectGrid{flex:1;min-height:0;overflow:hidden;display:grid;grid-template-columns:repeat(9,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));gap:5px;padding:2px}
+.subjectCard{min-width:0;min-height:0;border:2px solid var(--line);border-radius:11px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:3px 2px;cursor:pointer;overflow:hidden}
+.subjectCard:active{background:#f3f7ff}.subjectCard.noImage{padding-left:4px;padding-right:4px}.subjectCard img{width:min(62px,78%);height:min(62px,55%);object-fit:contain;flex:0 1 auto}.subjectCard>div{min-width:0;width:100%}.subjectName{text-align:center;font-size:14px;font-weight:900;line-height:1.05;overflow-wrap:anywhere}.subjectReading{text-align:center;font-size:8px;line-height:1.05;color:var(--muted);font-weight:800;margin-top:1px;overflow-wrap:anywhere}
+.confirmBox{flex:1;display:none;align-items:center;justify-content:center;flex-direction:column;gap:28px}.confirmBox.show{display:flex}.confirmText{font-size:43px;font-weight:900;text-align:center}.yesNo{display:grid;grid-template-columns:1fr 1fr;gap:24px;width:min(700px,90vw)}.ynBtn{min-height:120px;border:0;border-radius:22px;font-size:38px;font-weight:900;cursor:pointer}.yes{background:#dff7e9;color:#0c653d}.no{background:#f1f3f6;color:#475467}
+
+/* 時間割 */
+.timetableView{flex-direction:column;gap:7px;padding:7px 10px 10px}
+.ttTop{display:flex;align-items:center;gap:10px;background:#fff;border:2px solid var(--line);border-radius:16px;padding:7px 10px;box-shadow:var(--shadow)}
+.ttTitle{font-size:27px;font-weight:900}.spacer{flex:1}.editBtn{border:0;border-radius:13px;background:var(--green);color:#fff;font-size:17px;font-weight:900;padding:10px 18px;cursor:pointer}
+.mainTabs{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mainTab{border:3px solid var(--line);background:#fff;border-radius:16px;min-height:55px;font-size:27px;font-weight:900;cursor:pointer}.mainTab.active{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 3px 0 var(--blue2)}
+.nextSelectors{display:none;grid-template-columns:1.35fr repeat(7,1fr);gap:6px}.nextSelectors.show{display:grid}.nextBtn{border:2px solid var(--line);background:#fff;border-radius:12px;min-height:40px;font-size:16px;font-weight:900;cursor:pointer}.nextBtn.active{background:#0f83c7;color:#fff;border-color:#0f83c7}
+.dateCard{background:#fff;border:2px solid var(--line);border-radius:15px;padding:6px 12px;text-align:center;box-shadow:var(--shadow);cursor:pointer}.dateMain{font-size:25px;font-weight:900}.dateSub{font-size:12px;color:var(--muted);font-weight:800}
+.schedule,.editorSchedule{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1;min-height:0}.column{display:grid;grid-template-rows:repeat(6,minmax(68px,1fr));gap:5px;min-height:0}.period{display:grid;grid-template-columns:64px 1fr;background:#fff;border:2px solid var(--line);border-radius:13px;overflow:hidden;min-height:68px;cursor:pointer}.periodNo{display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f0f3f8;border-right:2px solid var(--line);font-weight:900}.periodNo .num{font-size:27px;line-height:1}.periodNo .unit{font-size:10px;margin-top:4px}.slots{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px}.slot{position:relative;display:flex;align-items:center;justify-content:center;min-width:0;border:2px solid #edf0f5;border-radius:10px;background:#fff;overflow:hidden}.slot.empty{background:#fbfcfe}.card{width:100%;height:100%;display:grid;grid-template-columns:50px 1fr;align-items:center;gap:4px;padding:3px 5px}.card img{width:47px;height:47px;object-fit:contain}.card.noImage{grid-template-columns:1fr}.cardText{text-align:center;min-width:0}.cardTitle{font-size:15px;font-weight:900;overflow-wrap:anywhere}.cardReading{font-size:9px;color:var(--muted);font-weight:800;margin-top:2px}
+
+/* 時間割編集 */
+.editorWindow{position:fixed;inset:0;background:var(--bg);z-index:160;display:none;flex-direction:column;padding:8px 10px 10px;gap:7px}.editorWindow.open{display:flex}.editorHead{display:flex;align-items:center;gap:10px;background:#fff;border:2px solid var(--line);border-radius:15px;padding:7px 10px}.editorTitle{font-size:25px;font-weight:900}.editorHead .hint{flex:1;text-align:center;color:var(--muted);font-size:13px;font-weight:800}.editTabs{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}.editTab{border:2px solid var(--line);background:#fff;border-radius:11px;min-height:40px;font-size:17px;font-weight:900;cursor:pointer}.editTab.active{background:var(--blue);color:#fff;border-color:var(--blue)}.editorInfo{display:flex;justify-content:space-between;min-height:23px;padding:0 4px;color:var(--muted);font-size:13px;font-weight:800}.saved{color:var(--green);opacity:0;transition:.2s}.saved.show{opacity:1}.editorSchedule .period{cursor:default}.editorSchedule .slot{border:2px dashed #c5ccda;background:#fafbfc;cursor:pointer}.editorSchedule .slot.hasCard{border-style:solid;background:#fff}.editorSchedule .card{padding-right:26px}.plus{font-size:27px;font-weight:900;color:#8490a5}.slotHint{font-size:11px;color:#8490a5;margin-left:4px;font-weight:800}.remove{position:absolute;right:2px;top:2px;width:23px;height:23px;border-radius:50%;border:0;background:#fff1f0;color:var(--red);font-size:16px;font-weight:900;cursor:pointer;z-index:2}
+
+/* カード選択 */
+.modal{position:fixed;inset:0;background:rgba(17,24,39,.58);display:none;align-items:center;justify-content:center;padding:18px;z-index:200}.modal.open{display:flex}.picker{width:min(1080px,96vw);max-height:90vh;background:#fff;border-radius:20px;display:flex;flex-direction:column;overflow:hidden}.pickerHead{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:2px solid var(--line)}.pickerTitle{font-size:22px;font-weight:900}.closePicker{border:0;background:#eef1f5;border-radius:11px;padding:8px 15px;font-size:16px;font-weight:900}.palette{overflow:auto;padding:12px;display:grid;grid-template-columns:repeat(5,minmax(145px,1fr));gap:8px}.pickCard{border:2px solid var(--line);background:#fff;border-radius:14px;display:grid;grid-template-columns:58px 1fr;align-items:center;gap:5px;min-height:76px;padding:6px;cursor:pointer}.pickCard img{width:56px;height:56px;object-fit:contain}.pickCard.noImage{grid-template-columns:1fr}.pickName{text-align:center;font-size:16px;font-weight:900}.pickReading{text-align:center;font-size:10px;color:var(--muted);font-weight:800;margin-top:2px}
+
+@media(max-width:900px){
+  .meetingRow{grid-template-columns:74px 125px 1fr}.meetingNum{font-size:46px}.meetingLabel{font-size:26px}.meetingTitle{font-size:31px}
+  .subjectGrid{grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:repeat(6,minmax(0,1fr))}.subjectCard img{width:min(52px,76%);height:min(52px,50%)}.subjectName{font-size:12px}.subjectReading{font-size:7px}.schedule,.editorSchedule{grid-template-columns:1fr}.column{grid-template-rows:repeat(6,84px)}.palette{grid-template-columns:repeat(3,minmax(135px,1fr))}
+}
+@media(orientation:landscape) and (max-height:700px){
+  .meetingView,.timetableView{padding:4px 7px 6px;gap:4px}.meetingTab{min-height:36px;font-size:19px}.meetingTitle{height:42px;flex-basis:42px;font-size:27px}.meetingRow{grid-template-columns:70px 118px 1fr}.meetingNum{font-size:40px}.meetingLabel{font-size:23px}.meetingPic{padding:2px 5px}
+  .messageStage{font-size:38px}.greetingButtons{padding:14px;gap:12px}.greetBtn{font-size:36px}.activity{padding:8px}.subjectGrid{grid-template-columns:repeat(4,1fr);grid-auto-rows:minmax(102px,1fr)}.subjectCard{grid-template-columns:70px 1fr;padding:5px}.subjectCard img{width:66px;height:66px}.subjectName{font-size:19px}
+  .ttTop{padding:4px 8px}.ttTitle{font-size:20px}.backBtn,.editBtn{padding:7px 12px;font-size:14px}.mainTab{min-height:39px;font-size:20px}.nextBtn{min-height:31px;font-size:13px}.dateCard{padding:3px 8px}.dateMain{font-size:19px}.dateSub{display:none}.schedule,.editorSchedule{gap:5px}.column{gap:3px}.period{min-height:55px;grid-template-columns:55px 1fr}.periodNo .num{font-size:22px}.slots{padding:2px;gap:2px}.card{grid-template-columns:40px 1fr}.card img{width:38px;height:38px}.cardTitle{font-size:13px}.cardReading{font-size:8px}
+}
+
+@media (orientation:landscape) and (max-height:700px){
+  .activity{padding:7px 9px}.activityHead{min-height:42px}.backBtn{padding:7px 14px;font-size:17px}.activityTitle{font-size:21px}
+  .effortStage{gap:3px}.effortPrompt{font-size:18px}.subjectGrid{grid-template-columns:repeat(9,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));grid-auto-rows:unset;gap:3px;padding:1px}
+  .subjectCard{border-radius:9px;padding:2px 1px}.subjectCard img{width:min(48px,72%);height:min(48px,50%)}.subjectName{font-size:11px}.subjectReading{font-size:7px}
+}
+</style>
+</head>
+<body>
+
+<section class="view meetingView active" id="meetingView">
+  <div class="meetingSwitcher">
+    <button class="meetingTab active" data-meeting="morning">あさのかい</button>
+    <button class="meetingTab" data-meeting="evening">かえりのかい</button>
+  </div>
+  <div class="meetingSheet">
+    <div class="meetingTitle" id="meetingTitle">あさのかい</div>
+    <div class="meetingRows morning" id="meetingRows"></div>
+  </div>
+</section>
+
+<section class="view timetableView" id="timetableView">
+  <div class="ttTop">
+    <button class="backBtn" id="backFromTimetable">もどる</button>
+    <div class="ttTitle">じかんわり</div><div class="spacer"></div>
+    <button class="editBtn" id="openEditor">時間割編集</button>
+  </div>
+  <div class="mainTabs">
+    <button class="mainTab active" data-mode="today">きょう</button>
+    <button class="mainTab" data-mode="next">つぎのひ</button>
+  </div>
+  <div class="nextSelectors" id="nextSelectors"></div>
+  <div class="dateCard" id="dateCard"><div class="dateMain" id="dateMain"></div><div class="dateSub">タップすると 日付を よみあげます</div></div>
+  <main class="schedule" id="schedule"></main>
+</section>
+
+<div class="activity" id="activity">
+  <div class="activityHead"><button class="backBtn" id="activityBack">もどる</button><div class="activityTitle" id="activityTitle"></div></div>
+  <div class="messageStage" id="messageStage"></div>
+  <div class="greetingButtons" id="greetingButtons" hidden>
+    <button class="greetBtn" data-speech="きりつ">きりつ</button>
+    <button class="greetBtn" data-speech="きをつけ">きをつけ</button>
+    <button class="greetBtn" data-speech="れい">れい</button>
+    <button class="greetBtn" data-speech="ちゃくせき">ちゃくせき</button>
+  </div>
+  <div class="effortStage" id="effortStage" hidden>
+    <div class="effortPrompt">がんばった きょうかを えらびましょう</div>
+    <div class="subjectGrid" id="subjectGrid"></div>
+    <div class="confirmBox" id="confirmBox">
+      <div class="confirmText" id="confirmText"></div>
+      <div class="yesNo"><button class="ynBtn yes" id="yesBtn">はい</button><button class="ynBtn no" id="noBtn">いいえ</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="editorWindow" id="editorWindow" aria-hidden="true">
+  <div class="editorHead"><div class="editorTitle">時間割編集</div><div class="hint">＋をタップしてカードを入れます。1時間に2枚まで入れられます。</div><button class="backBtn" id="closeEditor">もどる</button></div>
+  <div class="editTabs" id="editTabs"></div>
+  <div class="editorInfo"><div id="editorDayLabel"></div><div class="saved" id="saved">保存しました</div></div>
+  <main class="editorSchedule" id="editorSchedule"></main>
+</div>
+
+<div class="modal" id="modal" aria-hidden="true">
+  <div class="picker"><div class="pickerHead"><div class="pickerTitle" id="pickerTitle">カードを えらぶ</div><button class="closePicker" id="closePicker">とじる</button></div><div class="palette" id="palette"></div></div>
+</div>
+
+<script>
+(()=>{
+'use strict';
+const STORAGE_KEY='r8_timetable_v1';
+const DAY_KEYS=['mon','tue','wed','thu','fri','sat','other'];
+const DAY_LABELS={mon:'月',tue:'火',wed:'水',thu:'木',fri:'金',sat:'土',other:'その他'};
+const DAY_LONG={mon:'月ようび',tue:'火ようび',wed:'水ようび',thu:'木ようび',fri:'金ようび',sat:'土ようび',other:'その他'};
+const DAY_SPEECH={mon:'月曜日',tue:'火曜日',wed:'水曜日',thu:'木曜日',fri:'金曜日',sat:'土曜日'};
+const TARGET_DAY={mon:1,tue:2,wed:3,thu:4,fri:5,sat:6};
+const JS_DAY_TO_KEY=['other','mon','tue','wed','thu','fri','sat'];
+const WEEKDAY_LONG=['日ようび','月ようび','火ようび','水ようび','木ようび','金ようび','土ようび'];
+const WEEKDAY_HIRA=['にちようび','げつようび','かようび','すいようび','もくようび','きんようび','どようび'];
+const WEEKDAY_SPEECH=['日曜日','月曜日','火曜日','水曜日','木曜日','金曜日','土曜日'];
+
+const cards=[
+{id:'morning',name:'朝の会',reading:'あさの かい',img:'images/morning.png'},
+{id:'change',name:'着替え',reading:'きがえ',img:'images/change.png'},
+{id:'class',name:'クラス',reading:'くらす',img:'images/classroom.png'},
+{id:'japanese',name:'国語',reading:'こくご',img:'images/read.png'},
+{id:'math',name:'数学',reading:'すうがく',img:'images/math.png'},
+{id:'social',name:'社会',reading:'しゃかい',img:'images/social.png'},
+{id:'science',name:'理科',reading:'りか',img:'images/science.png'},
+{id:'music',name:'音楽',reading:'おんがく',img:'images/music.png'},
+{id:'art',name:'美術',reading:'びじゅつ',img:'images/art.png'},
+{id:'pe',name:'体育',reading:'たいいく',img:'images/pe.png'},
+{id:'morningExercise',name:'朝の運動',reading:'あさの うんどう',img:'images/exercise.png'},
+{id:'checkup',name:'検診・測定',reading:'けんしん・そくてい',img:'images/measure.png'},
+{id:'club',name:'クラブ',reading:'くらぶ',img:'images/club.png'},
+{id:'life',name:'生活単元学習',reading:'せいかつたんげんがくしゅう',img:'images/community.png'},
+{id:'socialSkills',name:'社会性の学習',reading:'しゃかいせいの がくしゅう',img:'images/socialskills.png'},
+{id:'foreign',name:'外国語',reading:'がいこくご',img:'images/english.png'},
+{id:'homeec',name:'職業・家庭',reading:'しょくぎょう・かてい',img:'images/homeec.png'},
+{id:'work',name:'作業学習',reading:'さぎょうがくしゅう',img:'images/work.png'},
+{id:'clean',name:'クリーンタイム',reading:'くりーんたいむ',img:'images/clean.png'},
+{id:'goodbye',name:'帰りの会',reading:'かえりの かい',img:'images/goodbye.png'},
+{id:'pool',name:'プール',reading:'ぷーる',img:'images/pool.png'},
+{id:'opening',name:'始業式',reading:'しぎょうしき',img:'images/ceremony_open.png'},
+{id:'closing',name:'終業式',reading:'しゅうぎょうしき',img:'images/ceremony_close.png'},
+{id:'completion',name:'修了式',reading:'しゅうりょうしき',img:'images/ceremony_close.png'},
+{id:'entrance',name:'入学式',reading:'にゅうがくしき',img:'images/entrance.png'},
+{id:'graduation',name:'卒業式',reading:'そつぎょうしき',img:'images/graduation.png'},
+{id:'evacuation',name:'避難訓練',reading:'ひなんくんれん',img:'images/evacuation.png'},
+{id:'sportsday',name:'体育発表会',reading:'たいいくはっぴょうかい',img:'images/sportsday.png'},
+{id:'outing',name:'校外学習',reading:'こうがいがくしゅう',img:'images/community.png'},
+{id:'gradPractice',name:'卒業式練習',reading:'そつぎょうしきれんしゅう',img:'images/graduation.png'},
+{id:'sportsPractice',name:'体育発表会練習',reading:'たいいくはっぴょうかいれんしゅう',img:'images/sportsday.png'},
+{id:'lunch',name:'給食',reading:'きゅうしょく',img:'images/lunch.png'},
+{id:'toothbrush',name:'歯みがき',reading:'はみがき',img:null}
+];
+const cardMap=Object.fromEntries(cards.map(c=>[c.id,c]));
+const effortIds=cards.map(c=>c.id);
+
+const meetingData={
+ morning:[
+  {label:'はじまりのあいさつ',pic:'images/meeting/greeting.gif',action:'greeting'},
+  {label:'きょうのひづけ',pic:'images/meeting/calendar.gif',action:'todayDate'},
+  {label:'きょうのてんき',pic:'images/weather.png',action:'weather'},
+  {label:'しゅっせきかくにん',pic:'images/meeting/attendance.gif',action:'attendance'},
+  {label:'よていのかくにん',pic:'images/meeting/schedule.gif',action:'todaySchedule'},
+  {label:'きゅうしょくのはっぴょう',pic:'images/meeting/lunch.gif',action:'lunch'},
+  {label:'せんせいのはなし',pic:'images/meeting/teacher.gif',action:'teacher'},
+  {label:'おわりのあいさつ',pic:'images/meeting/greeting.gif',action:'greeting'}
+ ],
+ evening:[
+  {label:'はじまりのあいさつ',pic:'images/meeting/greeting.gif',action:'greeting'},
+  {label:'がんばったこと',pic:'images/meeting/effort.gif',action:'effort'},
+  {label:'あしたのよてい',pic:'images/meeting/schedule.gif',action:'tomorrowSchedule'},
+  {label:'せんせいのはなし',pic:'images/meeting/teacher.gif',action:'teacher'},
+  {label:'かえりのかくにん',pics:['images/meeting/car.gif','images/meeting/bus.gif'],action:'returnCheck'},
+  {label:'おわりのあいさつ',pic:'images/meeting/greeting.gif',action:'greeting'}
+ ]
+};
+
+function blankSchedule(){return Array.from({length:12},()=>[null,null])}
+function defaultState(){return Object.fromEntries(DAY_KEYS.map(k=>[k,blankSchedule()]))}
+function loadState(){try{const p=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');if(!p||typeof p!=='object')return defaultState();const b=defaultState();DAY_KEYS.forEach(k=>{if(Array.isArray(p[k]))b[k]=Array.from({length:12},(_,i)=>{const r=Array.isArray(p[k][i])?p[k][i]:[];return [cardMap[r[0]]?r[0]:null,cardMap[r[1]]?r[1]:null]})});return b}catch(e){return defaultState()}}
+let state=loadState(),meeting='morning',mode='today',nextChoice='tomorrow',editorDay='mon',pickTarget=null,saveTimer=null,currentEffort=null,speechSerial=0,returnMeeting='morning';
+
+const meetingView=document.getElementById('meetingView'),meetingRows=document.getElementById('meetingRows'),meetingTitle=document.getElementById('meetingTitle');
+const timetableView=document.getElementById('timetableView'),scheduleEl=document.getElementById('schedule'),nextSelectors=document.getElementById('nextSelectors'),dateMain=document.getElementById('dateMain');
+const activity=document.getElementById('activity'),activityTitle=document.getElementById('activityTitle'),messageStage=document.getElementById('messageStage'),greetingButtons=document.getElementById('greetingButtons'),effortStage=document.getElementById('effortStage'),subjectGrid=document.getElementById('subjectGrid'),confirmBox=document.getElementById('confirmBox'),confirmText=document.getElementById('confirmText');
+const editorWindow=document.getElementById('editorWindow'),editTabs=document.getElementById('editTabs'),editorSchedule=document.getElementById('editorSchedule'),editorDayLabel=document.getElementById('editorDayLabel'),saved=document.getElementById('saved');
+const modal=document.getElementById('modal'),palette=document.getElementById('palette'),pickerTitle=document.getElementById('pickerTitle');
+
+function chooseVoice(){const vs=speechSynthesis.getVoices();return vs.find(v=>/^ja[-_]/i.test(v.lang)&&/Kyoko|Otoya|Nanami|Haruka|Japanese/i.test(v.name))||vs.find(v=>/^ja[-_]/i.test(v.lang))||null}
+function stopSpeech(){speechSerial++;if('speechSynthesis'in window)speechSynthesis.cancel()}
+function speak(text,onend){if(!('speechSynthesis'in window)){if(onend)onend();return}stopSpeech();const my=++speechSerial;const u=new SpeechSynthesisUtterance(text);u.lang='ja-JP';u.rate=.72;u.pitch=1;u.volume=1;const v=chooseVoice();if(v)u.voice=v;u.onend=()=>{if(my===speechSerial&&onend)onend()};speechSynthesis.speak(u)}
+function noon(d=new Date()){const x=new Date(d);x.setHours(12,0,0,0);return x}
+function tomorrow(){const d=noon();d.setDate(d.getDate()+1);return d}
+function nextOccurrence(dayNum){const d=noon();let diff=(dayNum-d.getDay()+7)%7;if(diff===0)diff=7;d.setDate(d.getDate()+diff);return d}
+function currentDisplay(){if(mode==='today'){const d=noon();return{date:d,key:JS_DAY_TO_KEY[d.getDay()],kind:'today'}}if(nextChoice==='tomorrow'){const d=tomorrow();return{date:d,key:JS_DAY_TO_KEY[d.getDay()],kind:'tomorrow'}}if(nextChoice==='other'){const d=tomorrow();return{date:d,key:'other',kind:'other'}}const d=nextOccurrence(TARGET_DAY[nextChoice]);return{date:d,key:nextChoice,kind:'weekday'}}
+function dateText(d){return `${d.getMonth()+1}月${d.getDate()}日　${WEEKDAY_LONG[d.getDay()]}`}
+function dateSpeechText(){const info=currentDisplay(),d=info.date,m=`${d.getMonth()+1}月`,day=`${d.getDate()}日`,wd=WEEKDAY_SPEECH[d.getDay()];if(info.kind==='today')return `きょうは、${m}、${day}、${wd}です。`;if(info.kind==='tomorrow')return `あしたは、${m}、${day}、${wd}です。`;if(info.kind==='weekday')return `${DAY_SPEECH[nextChoice]}は、${m}、${day}です。`;return `あしたは、${m}、${day}、${wd}です。その他の予定です。`}
+function todayDateScreenText(){const d=noon();return `きょうは ${d.getMonth()+1}がつ ${d.getDate()}にち ${WEEKDAY_HIRA[d.getDay()]}です`}
+function todayDateSpeech(){const d=noon();return `きょうは、${d.getMonth()+1}月、${d.getDate()}日、${WEEKDAY_SPEECH[d.getDay()]}です。`}
+
+function renderMeeting(){document.querySelectorAll('.meetingTab').forEach(b=>b.classList.toggle('active',b.dataset.meeting===meeting));meetingTitle.textContent=meeting==='morning'?'あさのかい':'かえりのかい';meetingRows.className=`meetingRows ${meeting}`;meetingRows.innerHTML=meetingData[meeting].map((it,i)=>{const pic=it.pics?`<div class="meetingPic double">${it.pics.map(p=>`<img src="${p}" alt="">`).join('')}</div>`:`<div class="meetingPic">${it.pic?`<img src="${it.pic}" alt="">`:''}</div>`;return `<button class="meetingRow" data-action="${it.action}"><div class="meetingNum">${i+1}</div>${pic}<div class="meetingLabel">${it.label}</div></button>`}).join('');meetingRows.querySelectorAll('.meetingRow').forEach(b=>b.addEventListener('click',()=>runMeetingAction(b.dataset.action)))}
+function resetActivityPanels(){
+ messageStage.hidden=true;greetingButtons.hidden=true;effortStage.hidden=true;
+ messageStage.textContent='';confirmBox.classList.remove('show');subjectGrid.style.display='grid';
+ currentEffort=null;
+}
+function showMeeting(){stopSpeech();timetableView.classList.remove('active');meetingView.classList.add('active');activity.classList.remove('open');resetActivityPanels();renderMeeting()}
+function openActivity(title,type='message',text=''){
+ stopSpeech();resetActivityPanels();activity.classList.add('open');activityTitle.textContent=title;
+ if(type==='message'){messageStage.hidden=false;messageStage.textContent=text}
+ else if(type==='greeting'){greetingButtons.hidden=false}
+ else if(type==='effort'){effortStage.hidden=false}
+}
+function closeActivity(){stopSpeech();activity.classList.remove('open');resetActivityPanels()}
+function showMessage(title,text,speechText){openActivity(title,'message',text);if(speechText)speak(speechText)}
+function showDateActivity(){openActivity('きょうのひづけ','message',todayDateScreenText());speak(todayDateSpeech(),()=>{activity.classList.remove('open')})}
+function openTimetable(which){returnMeeting=meeting;mode=which==='today'?'today':'next';nextChoice='tomorrow';meetingView.classList.remove('active');timetableView.classList.add('active');renderTimetable()}
+function runMeetingAction(action){
+ if(action==='greeting'){openActivity('あいさつ','greeting');return}
+ if(action==='todayDate'){showDateActivity();return}
+ if(action==='weather'){showMessage('きょうのてんき','てんきカードを はりましょう','きょうの天気。');return}
+ if(action==='attendance'){showMessage('しゅっせきかくにん','ともだちの なまえを よびましょう','出席の確認です。');return}
+ if(action==='todaySchedule'){speak('よていのかくにんをします。');openTimetable('today');return}
+ if(action==='lunch'){showMessage('きゅうしょくのはっぴょう','こんだてを よみましょう','給食の発表です。');return}
+ if(action==='teacher'){showMessage('せんせいのはなし','せんせいに おねがいしましょう','先生の話です。');return}
+ if(action==='effort'){openActivity('がんばったこと','effort');speak('頑張ったことを発表します。');return}
+ if(action==='tomorrowSchedule'){speak('あしたのよていをかくにんします。');openTimetable('next');return}
+ if(action==='returnCheck'){showMessage('かえりのかくにん','せんせいが かくにんしました','');return}
+}
+
+function cardImageHtml(c){return c.img?`<img src="${c.img}" alt="">`:''}
+function cardClass(c,base){return base+(c.img?'':' noImage')}
+
+function buildEffortCards(){subjectGrid.innerHTML=effortIds.map(id=>{const c=cardMap[id];return `<button class="${cardClass(c,'subjectCard')}" data-id="${id}">${cardImageHtml(c)}<div><div class="subjectName">${c.name}</div><div class="subjectReading">${c.reading}</div></div></button>`}).join('');subjectGrid.querySelectorAll('.subjectCard').forEach(b=>b.addEventListener('click',()=>{currentEffort=b.dataset.id;const c=cardMap[currentEffort];confirmText.textContent=`${c.name}を がんばりましたか？`;subjectGrid.style.display='none';confirmBox.classList.add('show')}))}
+
+function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));saved.classList.add('show');clearTimeout(saveTimer);saveTimer=setTimeout(()=>saved.classList.remove('show'),1000)}
+function buildNextSelectors(){const specs=[['tomorrow','あした'],['mon','月ようび'],['tue','火ようび'],['wed','水ようび'],['thu','木ようび'],['fri','金ようび'],['sat','土ようび'],['other','その他']];nextSelectors.innerHTML='';specs.forEach(([key,label])=>{const b=document.createElement('button');b.className='nextBtn'+(nextChoice===key?' active':'');b.textContent=label;b.addEventListener('click',()=>{nextChoice=key;renderTimetable()});nextSelectors.appendChild(b)})}
+function displayCard(cardId){if(!cardId)return '<div class="slot empty"></div>';const c=cardMap[cardId];return `<div class="slot"><div class="${cardClass(c,'card')}">${cardImageHtml(c)}<div class="cardText"><div class="cardTitle">${c.name}</div><div class="cardReading">${c.reading}</div></div></div></div>`}
+function renderSchedule(){const info=currentDisplay(),data=state[info.key]||blankSchedule(),cols=[data.slice(0,6),data.slice(6,12)];scheduleEl.innerHTML=cols.map((rows,col)=>`<section class="column">${rows.map((slots,i)=>{const h=i+1+col*6;return `<div class="period" data-hour="${h}"><div class="periodNo"><div class="num">${h}</div><div class="unit">時間目</div></div><div class="slots">${displayCard(slots[0])}${displayCard(slots[1])}</div></div>`}).join('')}</section>`).join('');scheduleEl.querySelectorAll('.period').forEach(r=>r.addEventListener('click',()=>speakPeriod(Number(r.dataset.hour))))}
+function renderTimetable(){document.querySelectorAll('.mainTab').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));nextSelectors.classList.toggle('show',mode==='next');buildNextSelectors();const info=currentDisplay();if(info.kind==='today')dateMain.textContent=`きょう　${dateText(info.date)}`;else if(info.kind==='tomorrow')dateMain.textContent=`あした　${dateText(info.date)}`;else if(info.kind==='weekday')dateMain.textContent=`${DAY_LONG[nextChoice]}　${dateText(info.date)}`;else dateMain.textContent=`その他　${dateText(info.date)}`;renderSchedule()}
+function speakPeriod(hour){const info=currentDisplay(),ids=(state[info.key][hour-1]||[]).filter(Boolean),names=ids.map(id=>cardMap[id]?.name).filter(Boolean);if(names.length===0){speak(`${hour}時間目は、予定がありません。`);return}const subject=names.length===1?names[0]:`${names[0]}と${names[1]}`;speak(`${hour}時間目は、${subject}、です。`)}
+function buildEditTabs(){editTabs.innerHTML='';DAY_KEYS.forEach(key=>{const b=document.createElement('button');b.className='editTab'+(editorDay===key?' active':'');b.textContent=key==='other'?'その他':DAY_LONG[key];b.addEventListener('click',()=>{editorDay=key;buildEditTabs();renderEditorSchedule()});editTabs.appendChild(b)})}
+function editorSlot(cardId,hour,slot){if(!cardId)return `<div class="slot" data-hour="${hour}" data-slot="${slot}"><span class="plus">＋</span><span class="slotHint">カード</span></div>`;const c=cardMap[cardId];return `<div class="slot hasCard" data-hour="${hour}" data-slot="${slot}"><div class="${cardClass(c,'card')}">${cardImageHtml(c)}<div class="cardText"><div class="cardTitle">${c.name}</div><div class="cardReading">${c.reading}</div></div></div><button class="remove">×</button></div>`}
+function renderEditorSchedule(){const data=state[editorDay];editorDayLabel.textContent=editorDay==='other'?'その他の予定':`${DAY_LONG[editorDay]}の予定`;const cols=[data.slice(0,6),data.slice(6,12)];editorSchedule.innerHTML=cols.map((rows,col)=>`<section class="column">${rows.map((slots,i)=>{const h=i+1+col*6;return `<div class="period"><div class="periodNo"><div class="num">${h}</div><div class="unit">時間目</div></div><div class="slots">${editorSlot(slots[0],h,0)}${editorSlot(slots[1],h,1)}</div></div>`}).join('')}</section>`).join('');editorSchedule.querySelectorAll('.slot').forEach(s=>s.addEventListener('click',e=>{if(e.target.closest('.remove'))return;openPicker(Number(s.dataset.hour),Number(s.dataset.slot))}));editorSchedule.querySelectorAll('.remove').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const s=b.closest('.slot');state[editorDay][Number(s.dataset.hour)-1][Number(s.dataset.slot)]=null;saveState();renderEditorSchedule()}))}
+function openPicker(hour,slot){pickTarget={day:editorDay,hour,slot};pickerTitle.textContent=`${hour}時間目　${slot+1}まい目のカード`;modal.classList.add('open')}
+function closePicker(){modal.classList.remove('open');pickTarget=null}
+function buildPalette(){palette.innerHTML='';cards.forEach(c=>{const b=document.createElement('button');b.className=cardClass(c,'pickCard');b.innerHTML=`${cardImageHtml(c)}<div><div class="pickName">${c.name}</div><div class="pickReading">${c.reading}</div></div>`;b.addEventListener('click',()=>{if(!pickTarget)return;state[pickTarget.day][pickTarget.hour-1][pickTarget.slot]=c.id;saveState();closePicker();renderEditorSchedule()});palette.appendChild(b)})}
+
+// events
+document.querySelectorAll('.meetingTab').forEach(b=>b.addEventListener('click',()=>{meeting=b.dataset.meeting;renderMeeting()}));
+document.getElementById('activityBack').addEventListener('click',closeActivity);
+document.querySelectorAll('.greetBtn').forEach(b=>b.addEventListener('click',()=>speak(b.dataset.speech)));
+document.getElementById('yesBtn').addEventListener('click',()=>{if(!currentEffort)return;const c=cardMap[currentEffort];speak(`きょうは、${c.name}を、頑張りました。`,()=>{closeActivity()})});
+document.getElementById('noBtn').addEventListener('click',()=>{stopSpeech();confirmBox.classList.remove('show');subjectGrid.style.display='grid';currentEffort=null});
+document.querySelectorAll('.mainTab').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.mode;if(mode==='next')nextChoice='tomorrow';renderTimetable()}));
+document.getElementById('dateCard').addEventListener('click',()=>speak(dateSpeechText()));
+document.getElementById('backFromTimetable').addEventListener('click',()=>{meeting=returnMeeting;showMeeting()});
+document.getElementById('openEditor').addEventListener('click',()=>{stopSpeech();editorWindow.classList.add('open');buildEditTabs();renderEditorSchedule()});
+document.getElementById('closeEditor').addEventListener('click',()=>{editorWindow.classList.remove('open');renderTimetable()});
+document.getElementById('closePicker').addEventListener('click',closePicker);modal.addEventListener('click',e=>{if(e.target===modal)closePicker()});
+window.addEventListener('keydown',e=>{if(e.key==='Escape'){if(modal.classList.contains('open'))closePicker();else if(editorWindow.classList.contains('open'))document.getElementById('closeEditor').click();else if(activity.classList.contains('open'))closeActivity();else if(timetableView.classList.contains('active'))document.getElementById('backFromTimetable').click()}});
+if('speechSynthesis'in window)speechSynthesis.onvoiceschanged=()=>{};
+
+buildEffortCards();buildPalette();renderMeeting();
+})();
+</script>
+</body>
+</html>
